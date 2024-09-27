@@ -9,28 +9,31 @@ const CustomersComponent = () => {
 
   const navigate = useNavigate();
 
+  // Obtener los grupos almacenados en localStorage
   useEffect(() => {
     const storedGroups = JSON.parse(localStorage.getItem('groups')) || [];
     setCustomers(storedGroups);
   }, []);
 
+  // Función para agregar grupo
   const handleAddGroup = () => {
     navigate('/create-group');
   };
 
+  // Función para redirigir a Team Members
   const handleTeamMembersRedirect = (groupName) => {
     navigate('/team-members', { state: { groupName } });
   };
 
+  // Función para intentar eliminar grupo
   const handleDeleteGroup = (groupName) => {
     setGroupToDelete(groupName);
     setShowDeleteModal(true);
   };
 
+  // Confirmar eliminación (pero en realidad no eliminamos el grupo)
   const confirmDeleteGroup = () => {
-    const updatedGroups = customers.filter(group => group.name !== groupToDelete);
-    localStorage.setItem('groups', JSON.stringify(updatedGroups));
-    setCustomers(updatedGroups);
+    // No eliminamos el grupo, solo mostramos la confirmación
     setShowDeleteModal(false);
     setDeleteConfirmation(true);
   };
@@ -88,38 +91,41 @@ const CustomersComponent = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                  {customers.map((customer, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-blue-50 transition-colors duration-200" // Resaltar la fila completa
-                    >
-                      <td className="px-2 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-blue-500 cursor-pointer hover:text-blue-700 hover:underline">
-                        <div>
-                          <h2 className="font-medium text-gray-800">{customer.name}</h2>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
-                        <div>
-                          <p className="text-gray-500">{customer.description}</p>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
-                        <div className="flex items-center">
-                          {customer.users} usuarios
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
-                        <button
-                          onClick={() => handleDeleteGroup(customer.name)}
-                          className="px-4 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-
+                    {customers.map((customer, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-blue-50 cursor-pointer transition-colors duration-200"
+                        onClick={() => handleTeamMembersRedirect(customer.name)} // Redirigir al hacer clic en la fila
+                      >
+                        <td className="px-2 py-2 text-xs sm:text-sm font-medium whitespace-nowrap text-blue-500 hover:text-blue-700 hover:underline">
+                          <div>
+                            <h2 className="font-medium text-gray-800">{customer.name}</h2>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
+                          <div>
+                            <p className="text-gray-500">{customer.description}</p>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
+                          <div className="flex items-center">
+                            {customer.users} usuarios
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-xs sm:text-sm whitespace-nowrap">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Evitar la redirección al hacer clic en el botón de eliminar
+                              handleDeleteGroup(customer.name);
+                            }}
+                            className="px-4 py-1 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
+                          >
+                            Eliminar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
             </div>
@@ -127,15 +133,22 @@ const CustomersComponent = () => {
         </div>
       </div>
 
+      {/* Modal de confirmación de eliminación */}
       {showDeleteModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-lg font-bold text-gray-800 mb-4">¿Está seguro que quiere eliminar el grupo {groupToDelete}?</h2>
             <div className="flex justify-end gap-4">
-              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+              >
                 Cancelar
               </button>
-              <button onClick={confirmDeleteGroup} className="px-4 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600">
+              <button
+                onClick={confirmDeleteGroup}
+                className="px-4 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600"
+              >
                 Sí, Eliminar
               </button>
             </div>
@@ -143,11 +156,18 @@ const CustomersComponent = () => {
         </div>
       )}
 
+      {/* Mensaje de confirmación de eliminación */}
       {deleteConfirmation && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Grupo eliminado exitosamente</h2>
-            <button onClick={closeConfirmation} className="px-4 py-2 text-sm text-white bg-blue-500 rounded-lg hover:bg-blue-600">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Se ha enviado un correo a cada miembro</h2>
+            <p className="text-gray-600 mb-4">
+              Si todos están de acuerdo, el grupo será cerrado. Muchas gracias.
+            </p>
+            <button
+              onClick={closeConfirmation}
+              className="px-4 py-2 text-sm text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+            >
               Aceptar
             </button>
           </div>
